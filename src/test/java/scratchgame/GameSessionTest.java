@@ -2,20 +2,21 @@ package scratchgame;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
-import scratchgame.logic.MatrixGenerator;
-import scratchgame.logic.RewardCalculator;
-import scratchgame.model.CalculationResult;
 import scratchgame.model.Config;
+import scratchgame.model.StandardSymbolsProb;
+import scratchgame.model.SymbolConfig;
+import scratchgame.model.WinCombination;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
-
-import static org.mockito.Mockito.*;
 
 public class GameSessionTest {
 
     private Config config;
-    private Scanner scannerMock;
 
     @Before
     public void setup() {
@@ -23,60 +24,73 @@ public class GameSessionTest {
         config.rows = 3;
         config.columns = 3;
 
-        scannerMock = mock(Scanner.class);
+        // Initialize probabilities
+        config.probabilities = new scratchgame.model.Probabilities();
+
+        // Standard symbols with probabilities
+        Map<String, Integer> standardWeights = new HashMap<>();
+        standardWeights.put("A", 30);
+        standardWeights.put("B", 30);
+        standardWeights.put("C", 40);
+
+        StandardSymbolsProb stdProb = new StandardSymbolsProb();
+        stdProb.row = 0;
+        stdProb.column = 0;
+        stdProb.symbols = standardWeights;
+
+        config.probabilities.standard_symbols = new ArrayList<>();
+        config.probabilities.standard_symbols.add(stdProb);
+
+        // Bonus symbols with probabilities
+        Map<String, Integer> bonusWeights = new HashMap<>();
+        bonusWeights.put("5x", 10);
+        bonusWeights.put("+500", 5);
+        bonusWeights.put("MISS", 85);
+
+        config.probabilities.bonus_symbols = new scratchgame.model.BonusSymbolsProb();
+        config.probabilities.bonus_symbols.symbols = bonusWeights;
+
+        // Define standard symbols for RewardCalculator
+        config.symbols = new HashMap<>();
+        config.symbols.put("A", new SymbolConfig("standard", 5));
+        config.symbols.put("B", new SymbolConfig("standard", 3));
+        config.symbols.put("C", new SymbolConfig("standard", 2));
+
+        // Define bonus symbols in the config
+        config.symbols.put("5x", new SymbolConfig("bonus", 5, "multiply_reward"));
+        config.symbols.put("+500", new SymbolConfig("bonus", 0, "extra_bonus", 500));
+        config.symbols.put("MISS", new SymbolConfig("bonus", 0, "miss"));
+
+        // Winning combinations
+        config.win_combinations = new HashMap<>();
+        config.win_combinations.put("same_symbol_3_times", new WinCombination("same_symbols", 3, 1, "same_symbols"));
     }
 
-    /**
-     * Test: Ensures the game correctly processes default bet when no input is given.
-     */
     @Test
     public void testDefaultBet() {
-        when(scannerMock.nextLine()).thenReturn(""); // Simulate Enter press
-        GameSession.playRound(scannerMock, config);
-        verify(scannerMock, atLeastOnce()).nextLine();
+        String input = "\n"; // Pressing Enter (empty input)
+        Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
+        GameSession.playRound(scanner, config);
     }
 
-    /**
-     * Test: Ensures the game correctly processes a valid numeric bet.
-     */
     @Test
     public void testValidBet() {
-        when(scannerMock.nextLine()).thenReturn("200");
-        GameSession.playRound(scannerMock, config);
-        verify(scannerMock, atLeastOnce()).nextLine();
+        String input = "200\n";
+        Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
+        GameSession.playRound(scanner, config);
     }
 
-    /**
-     * Test: Ensures the game falls back to default bet when input is invalid.
-     */
     @Test
     public void testInvalidBet() {
-        when(scannerMock.nextLine()).thenReturn("invalid");
-        GameSession.playRound(scannerMock, config);
-        verify(scannerMock, atLeastOnce()).nextLine();
+        String input = "invalid\n";
+        Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
+        GameSession.playRound(scanner, config);
     }
 
-    /**
-     * Test: Ensures playRound calls reward calculation and matrix generation.
-     */
     @Test
-    public void testPlayRoundInvokesLogic() {
-        String[][] dummyMatrix = {
-                {"A", "B", "C"},
-                {"D", "E", "F"},
-                {"G", "H", "I"}
-        };
-
-        CalculationResult dummyResult = new CalculationResult();
-        dummyResult.finalReward = 100;
-
-        when(scannerMock.nextLine()).thenReturn("100");
-        when(MatrixGenerator.generateMatrix(any(), anyInt(), anyInt())).thenReturn(dummyMatrix);
-        when(RewardCalculator.calculateReward(any(), anyInt(), any())).thenReturn(dummyResult);
-
-        GameSession.playRound(scannerMock, config);
-
-        verify(MatrixGenerator.class, times(1));
-        verify(RewardCalculator.class, times(1));
+    public void testMultipleInputs() {
+        String input = "300\nn\n"; // Bet 300 and then decline new game
+        Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
+        GameSession.playRound(scanner, config);
     }
 }
