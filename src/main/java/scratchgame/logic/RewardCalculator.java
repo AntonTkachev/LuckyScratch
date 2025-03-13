@@ -27,13 +27,12 @@ public class RewardCalculator {
         List<String> breakdown = new ArrayList<>();
         Map<String, Integer> symbolCount = new HashMap<>();
 
-        int rows = matrix.length;
         int cols = matrix[0].length;
 
         // Count occurrences of each standard symbol
-        for (int r = 0; r < rows; r++) {
+        for (String[] strings : matrix) {
             for (int c = 0; c < cols; c++) {
-                String sym = matrix[r][c];
+                String sym = strings[c];
                 SymbolConfig symCfg = config.symbols.get(sym);
                 if (symCfg != null && "standard".equals(symCfg.type)) {
                     symbolCount.put(sym, symbolCount.getOrDefault(sym, 0) + 1);
@@ -107,9 +106,9 @@ public class RewardCalculator {
         String appliedBonusSymbol = null;
         if (totalReward > 0) {
             bonusLoop:
-            for (int r = 0; r < rows; r++) {
+            for (String[] strings : matrix) {
                 for (int c = 0; c < cols; c++) {
-                    String sym = matrix[r][c];
+                    String sym = strings[c];
                     SymbolConfig symCfg = config.symbols.get(sym);
                     if (symCfg != null && "bonus".equals(symCfg.type)) {
                         appliedBonusSymbol = sym;
@@ -142,11 +141,8 @@ public class RewardCalculator {
             }
         }
 
-        // Round final reward
-        long finalReward = Math.round(totalReward);
-
         // Create result object
-        result.finalReward = finalReward;
+        result.finalReward = Math.round(totalReward);
         result.appliedCombinations = appliedCombinations;
         result.appliedBonusSymbol = appliedBonusSymbol;
         result.detailedBreakdown = breakdown;

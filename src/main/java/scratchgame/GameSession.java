@@ -62,18 +62,6 @@ public class GameSession {
             System.out.println();
         }
 
-        if (result.appliedCombinations == null || result.appliedCombinations.isEmpty()) {
-            System.out.println("\nNo winning combinations (you lost).");
-        } else {
-            System.out.println("\nWinning combinations:");
-            result.appliedCombinations.forEach((symbol, combos) -> {
-                for (String combo : combos) {
-                    String readable = COMBO_READABLE_NAMES.getOrDefault(combo, combo);
-                    System.out.println("  Symbol '" + symbol + "': " + readable);
-                }
-            });
-        }
-
         System.out.println("\nDetailed breakdown:");
         if (result.detailedBreakdown != null && !result.detailedBreakdown.isEmpty()) {
             for (String line : result.detailedBreakdown) {
